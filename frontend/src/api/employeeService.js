@@ -1,8 +1,27 @@
 const RAW_URL = (import.meta.env.VITE_API_URL || '').trim();
-const BACKEND_URL = RAW_URL.replace(/\/api\/employees\/?$/, '').replace(/\/$/, '');
+const DEFAULT_PROD_BACKEND = 'https://employee-management-sys-0dpe.onrender.com';
+
+const isLocal = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const BACKEND_URL = RAW_URL
+  ? RAW_URL.replace(/\/api\/employees\/?$/, '').replace(/\/$/, '')
+  : (!isLocal ? DEFAULT_PROD_BACKEND : '');
 
 const API_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api/employees` : '/api/employees';
 const AUTH_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api/auth` : '/api/auth';
+
+async function parseResponse(response) {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
+      throw new Error(`Connected to static host instead of backend API. Please configure VITE_API_URL to https://employee-management-sys-0dpe.onrender.com.`);
+    }
+    throw new Error(`Invalid response format from server (HTTP ${response.status}).`);
+  }
+}
 
 export const employeeService = {
   getAuthHeaders() {
@@ -14,16 +33,27 @@ export const employeeService = {
   },
 
   async login(username, password) {
-    const response = await fetch(`${AUTH_BASE_URL}/login`, {
-      method: 'POST',
-      credentials: 'include', // Spring Security HTTP Session cookie (JSESSIONID)
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || 'Authentication failed. Please check credentials.');
+    let response;
+    try {
+      response = await fetch(`${AUTH_BASE_URL}/login`, {
+        method: 'POST',
+        credentials: 'include', // Spring Security HTTP Session cookie (JSESSIONID)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+    } catch (netErr) {
+      throw new Error(`Unable to connect to backend server at ${AUTH_BASE_URL}. Check network connection or backend status.`);
     }
+
+    const result = await parseResponse(response);
+
+    if (!response.ok || !result.success) {
+      if (response.status === 401) {
+        throw new Error('Invalid credentials. Please verify your username / employee ID and password.');
+      }
+      throw new Error(result.message || `Authentication failed (HTTP ${response.status}).`);
+    }
+
     const userData = result.data;
     localStorage.setItem('kloudspot_auth_header', userData.basicAuthHeader);
     localStorage.setItem('kloudspot_auth_user', JSON.stringify(userData));
@@ -54,7 +84,6 @@ export const employeeService = {
         return null;
       }
     }
-    // Return null if not logged in - landing page will prompt for login
     return null;
   },
 
@@ -72,11 +101,12 @@ export const employeeService = {
       credentials: 'include',
       headers: this.getAuthHeaders()
     });
+
+    const result = await parseResponse(response);
+
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to fetch employees');
+      throw new Error(result.message || 'Failed to fetch employees');
     }
-    const result = await response.json();
     return result.data;
   },
 
@@ -85,11 +115,12 @@ export const employeeService = {
       credentials: 'include',
       headers: this.getAuthHeaders()
     });
+
+    const result = await parseResponse(response);
+
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to fetch employee details');
+      throw new Error(result.message || 'Failed to fetch employee details');
     }
-    const result = await response.json();
     return result.data;
   },
 
@@ -104,15 +135,16 @@ export const employeeService = {
       headers,
       body: JSON.stringify(employeeData)
     });
+
+    const result = await parseResponse(response);
+
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      if (err.validationErrors) {
-        const firstErr = Object.values(err.validationErrors)[0];
+      if (result.validationErrors) {
+        const firstErr = Object.values(result.validationErrors)[0];
         throw new Error(firstErr);
       }
-      throw new Error(err.message || 'Failed to create employee');
+      throw new Error(result.message || 'Failed to create employee');
     }
-    const result = await response.json();
     return result.data;
   },
 
@@ -127,15 +159,16 @@ export const employeeService = {
       headers,
       body: JSON.stringify(employeeData)
     });
+
+    const result = await parseResponse(response);
+
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      if (err.validationErrors) {
-        const firstErr = Object.values(err.validationErrors)[0];
+      if (result.validationErrors) {
+        const firstErr = Object.values(result.validationErrors)[0];
         throw new Error(firstErr);
       }
-      throw new Error(err.message || 'Failed to update employee');
+      throw new Error(result.message || 'Failed to update employee');
     }
-    const result = await response.json();
     return result.data;
   },
 
@@ -145,31 +178,41 @@ export const employeeService = {
       credentials: 'include',
       headers: this.getAuthHeaders()
     });
+
+    const result = await parseResponse(response);
+
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to delete employee');
+      throw new Error(result.message || 'Failed to delete employee');
     }
     return true;
   },
 
   async getDepartments() {
-    const response = await fetch(`${API_BASE_URL}/departments`, {
-      credentials: 'include',
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok) return [];
-    const result = await response.json();
-    return result.data || [];
+    try {
+      const response = await fetch(`${API_BASE_URL}/departments`, {
+        credentials: 'include',
+        headers: this.getAuthHeaders()
+      });
+      if (!response.ok) return [];
+      const result = await parseResponse(response);
+      return result.data || [];
+    } catch (e) {
+      return [];
+    }
   },
 
   async getStats() {
-    const response = await fetch(`${API_BASE_URL}/stats`, {
-      credentials: 'include',
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok) return { total: 0, active: 0, inactive: 0 };
-    const result = await response.json();
-    return result.data || { total: 0, active: 0, inactive: 0 };
+    try {
+      const response = await fetch(`${API_BASE_URL}/stats`, {
+        credentials: 'include',
+        headers: this.getAuthHeaders()
+      });
+      if (!response.ok) return { total: 0, active: 0, inactive: 0 };
+      const result = await parseResponse(response);
+      return result.data || { total: 0, active: 0, inactive: 0 };
+    } catch (e) {
+      return { total: 0, active: 0, inactive: 0 };
+    }
   },
 
   async importCsv(file) {
@@ -182,7 +225,9 @@ export const employeeService = {
       headers: this.getAuthHeaders(),
       body: formData
     });
-    const result = await response.json();
+
+    const result = await parseResponse(response);
+
     if (!response.ok || !result.success) {
       throw new Error(result.message || 'CSV Import failed');
     }
