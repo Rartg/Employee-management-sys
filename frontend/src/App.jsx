@@ -213,7 +213,7 @@ export default function App() {
     showToast('Logged out of directory session.');
   };
 
-  // IF NOT LOGGED IN, USER LANDS DIRECTLY ON LOGIN PAGE
+  // If not authenticated, render login page
   if (!currentUser) {
     return (
       <LoginPage

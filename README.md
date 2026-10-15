@@ -32,14 +32,14 @@
 A full-stack, enterprise-grade Employee Management System allowing administrators to seamlessly manage employee records through an intuitive, modern dashboard backed by high-performance Spring Boot RESTful APIs and MongoDB persistent storage.
 
 ### Key Features Implemented:
-* **Full CRUD Operations:** Add employee, view detailed profiles, edit details, and delete records with safety confirmation prompts.
+* **Full CRUD Operations:** Add employee, view detailed profiles, edit details, and delete records with safety confirmation dialogs.
 * **All 9 Required Attributes Stored:** `Employee ID`, `Full Name`, `Email Address`, `Phone Number`, `Department`, `Designation`, `Date of Joining`, `Salary`, and `Employment Status (Active/Inactive)`.
 * **Search & Multi-Filter:** Real-time search across Employee Name, Email, and ID, combined with simultaneous filtering by Department and Employment Status.
 * **Server-Side Pagination & Sorting:** Efficient database pagination (`Pageable` with `skip()`/`limit()`) and dynamic field sorting.
 * **Mongock Database Migration & Automated Seeding:** Enterprise version-controlled Mongock ChangeUnits (`V001__CreateEmployeeIndexes` and `V002__SeedInitialEmployees`) establishing unique indexes on `email` and `employeeId` with distributed locking and seeding 12 realistic records.
 * **Dual-Theme Design System:** Instant switching between True Black Dark mode and crisp Executive Day (Light) mode with zero layout shift.
 * **Interactive API Documentation:** Live Swagger / OpenAPI 3 UI available at `http://localhost:8080/swagger-ui.html`.
-* **Unit Testing:** 23 comprehensive tests covering service-layer business logic and controller HTTP contracts using **JUnit 5** and **Mockito** (100% passing).
+* **Unit Testing:** 28 comprehensive tests covering service-layer business logic and controller HTTP contracts using **JUnit 5** and **Mockito** (100% passing).
 * **Bonus Enhancements Included:**
   * **Export to CSV:** One-click download of filtered employee lists into an RFC-4180 compliant CSV format with formula injection protection.
   * **Docker Compose:** Complete one-command containerization (`docker-compose.yml`) running MongoDB, Spring Boot Backend, and React Frontend with healthchecks.
