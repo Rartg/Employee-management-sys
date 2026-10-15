@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: ems-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: employee_db
+    volumes:
+      - mongo-data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - ems-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ems-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DB=employee_db
+    depends_on:
+      - mongodb
+    networks:
+      - ems-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ems-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - ems-network
+
+volumes:
+  mongo-data:
+
+networks:
+  ems-network:
+    driver: bridge

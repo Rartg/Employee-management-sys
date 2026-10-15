@@ -1,0 +1,270 @@
+{
+  "info": {
+    "name": "Kloudspot Employee Management System API",
+    "description": "Full collection of REST API requests for testing CRUD, search, filter, pagination, and CSV export.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get All Employees (Paginated & Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees?page=0&size=10&search=&department=&status=&sortBy=createdAt&direction=desc",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            },
+            {
+              "key": "search",
+              "value": ""
+            },
+            {
+              "key": "department",
+              "value": ""
+            },
+            {
+              "key": "status",
+              "value": ""
+            },
+            {
+              "key": "sortBy",
+              "value": "createdAt"
+            },
+            {
+              "key": "direction",
+              "value": "desc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Search Employees by Name or Email",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees?search=Aarav",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees"
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "Aarav"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Filter Employees by Department & Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees?department=Engineering&status=Active",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees"
+          ],
+          "query": [
+            {
+              "key": "department",
+              "value": "Engineering"
+            },
+            {
+              "key": "status",
+              "value": "Active"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Create New Employee",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeId\": \"EMP-2001\",\n  \"fullName\": \"Kavita Singhania\",\n  \"email\": \"kavita.s@kloudspot.com\",\n  \"phoneNumber\": \"+91 9123456780\",\n  \"department\": \"Engineering\",\n  \"designation\": \"Staff Software Engineer\",\n  \"dateOfJoining\": \"2024-01-15\",\n  \"salary\": 140000.0,\n  \"employmentStatus\": \"Active\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees"
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Get Employee By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees/{{EMPLOYEE_DB_ID}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees",
+            "{{EMPLOYEE_DB_ID}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Update Employee Details",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeId\": \"EMP-2001\",\n  \"fullName\": \"Kavita Singhania\",\n  \"email\": \"kavita.s@kloudspot.com\",\n  \"phoneNumber\": \"+91 9123456780\",\n  \"department\": \"Engineering\",\n  \"designation\": \"Principal Engineer\",\n  \"dateOfJoining\": \"2024-01-15\",\n  \"salary\": 160000.0,\n  \"employmentStatus\": \"Active\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/employees/{{EMPLOYEE_DB_ID}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees",
+            "{{EMPLOYEE_DB_ID}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Delete Employee",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees/{{EMPLOYEE_DB_ID}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees",
+            "{{EMPLOYEE_DB_ID}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Get All Departments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees/departments",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees",
+            "departments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. Get Employee Statistics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees/stats",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees",
+            "stats"
+          ]
+        }
+      }
+    },
+    {
+      "name": "10. Export Employees to CSV",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees/export/csv",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees",
+            "export",
+            "csv"
+          ]
+        }
+      }
+    }
+  ]
+}

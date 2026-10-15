@@ -1,0 +1,20 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+
+# Backend
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.iml
+backend/.idea/
+backend/.project
+backend/.classpath
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# Database
+data/
