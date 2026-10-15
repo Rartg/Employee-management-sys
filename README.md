@@ -12,12 +12,12 @@
 
 ---
 
-## 🌐 Live Production Deployments & Access
+## Live Production Deployments & Access
 
-* **🚀 Live Frontend Application:** [https://employee-management-sys-1.onrender.com](https://employee-management-sys-1.onrender.com)
-* **⚙️ Live Backend REST API:** [https://employee-management-sys-0dpe.onrender.com](https://employee-management-sys-0dpe.onrender.com)
-* **📖 Live Swagger / OpenAPI Documentation:** [https://employee-management-sys-0dpe.onrender.com/swagger-ui.html](https://employee-management-sys-0dpe.onrender.com/swagger-ui.html)
-* **📂 GitHub Repository:** [https://github.com/Rartg/Employee-management-sys](https://github.com/Rartg/Employee-management-sys)
+* **Live Frontend Application:** [https://employee-management-sys-1.onrender.com](https://employee-management-sys-1.onrender.com)
+* **Live Backend REST API:** [https://employee-management-sys-0dpe.onrender.com](https://employee-management-sys-0dpe.onrender.com)
+* **Live Swagger / OpenAPI Documentation:** [https://employee-management-sys-0dpe.onrender.com/swagger-ui.html](https://employee-management-sys-0dpe.onrender.com/swagger-ui.html)
+* **GitHub Repository:** [https://github.com/Rartg/Employee-management-sys](https://github.com/Rartg/Employee-management-sys)
 
 ### Default Demonstration Credentials:
 | Account Role | Username / Identifier | Password | Access Rights |
