@@ -45,6 +45,10 @@ public class Employee {
     @Indexed
     private EmploymentStatus employmentStatus;
 
+    private String password;
+
+    private String role;
+
     @CreatedDate
     private LocalDateTime createdAt;
 

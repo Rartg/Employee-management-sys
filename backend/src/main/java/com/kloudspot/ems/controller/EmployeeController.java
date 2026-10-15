@@ -1,6 +1,8 @@
 package com.kloudspot.ems.controller;
 
 import com.kloudspot.ems.dto.ApiResponse;
+import com.kloudspot.ems.dto.CsvImportResultDTO;
+import org.springframework.web.multipart.MultipartFile;
 import com.kloudspot.ems.dto.EmployeeRequestDTO;
 import com.kloudspot.ems.dto.EmployeeResponseDTO;
 import com.kloudspot.ems.dto.PaginatedResponse;
@@ -120,15 +122,15 @@ public class EmployeeController {
 
         for (EmployeeResponseDTO emp : list) {
             csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%.2f,\"%s\"\n",
-                    emp.getEmployeeId(),
-                    emp.getFullName().replace("\"", "\"\""),
-                    emp.getEmail(),
-                    emp.getPhoneNumber(),
-                    emp.getDepartment(),
-                    emp.getDesignation(),
-                    emp.getDateOfJoining(),
-                    emp.getSalary(),
-                    emp.getEmploymentStatus()));
+                    escapeCsvField(emp.getEmployeeId()),
+                    escapeCsvField(emp.getFullName()),
+                    escapeCsvField(emp.getEmail()),
+                    escapeCsvField(emp.getPhoneNumber()),
+                    escapeCsvField(emp.getDepartment()),
+                    escapeCsvField(emp.getDesignation()),
+                    emp.getDateOfJoining() != null ? emp.getDateOfJoining().toString() : "",
+                    emp.getSalary() != null ? emp.getSalary() : 0.0,
+                    emp.getEmploymentStatus() != null ? emp.getEmploymentStatus().name() : ""));
         }
 
         byte[] output = csv.toString().getBytes(StandardCharsets.UTF_8);
@@ -141,4 +143,24 @@ public class EmployeeController {
                 .headers(headers)
                 .body(output);
     }
+
+    private String escapeCsvField(String value) {
+        if (value == null) return "";
+        String sanitized = value.trim();
+        // Prevent CSV formula injection in spreadsheet applications (Excel, LibreOffice)
+        if (sanitized.startsWith("=") || sanitized.startsWith("+") || sanitized.startsWith("-") || sanitized.startsWith("@")) {
+            sanitized = "'" + sanitized;
+        }
+        return sanitized.replace("\"", "\"\"");
+    }
+
+    @PostMapping(value = {"/import/csv", "/import-csv"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import employee records from CSV file (Bonus Feature)",
+            description = "Uploads an RFC-4180 CSV file containing employee records, validates data, and imports or updates MongoDB database.")
+    public ResponseEntity<ApiResponse<CsvImportResultDTO>> importEmployeesFromCsv(
+            @RequestParam("file") MultipartFile file) {
+        CsvImportResultDTO result = employeeService.importEmployeesFromCsv(file);
+        return ResponseEntity.ok(ApiResponse.success("CSV import processed successfully", result));
+    }
+
 }

@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -40,6 +42,9 @@ class EmployeeServiceTest {
     @Mock
     private MongoTemplate mongoTemplate;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private EmployeeServiceImpl employeeService;
 
@@ -48,6 +53,8 @@ class EmployeeServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(passwordEncoder.encode(anyString())).thenAnswer(invocation -> "encoded_" + invocation.getArgument(0));
+
         sampleEmployee = Employee.builder()
                 .id("db-id-001")
                 .employeeId("EMP-101")
@@ -201,5 +208,74 @@ class EmployeeServiceTest {
         assertEquals(1, response.getContent().size());
         assertEquals(1L, response.getTotalElements());
         assertEquals(0, response.getPageNumber());
+    }
+
+    @Test
+    @DisplayName("Should throw DuplicateResourceException when updating with an employeeId already taken by another employee")
+    void updateEmployee_DuplicateEmployeeId_ThrowsException() {
+        when(employeeRepository.findById("db-id-001")).thenReturn(Optional.of(sampleEmployee));
+        when(employeeRepository.existsByEmployeeIdAndIdNot(eq("EMP-101"), eq("db-id-001"))).thenReturn(true);
+
+        DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
+                () -> employeeService.updateEmployee("db-id-001", sampleRequestDTO));
+
+        assertTrue(exception.getMessage().contains("already assigned"));
+        verify(employeeRepository, never()).save(any(Employee.class));
+    }
+
+    @Test
+    @DisplayName("Should throw DuplicateResourceException when updating with an email already taken by another employee")
+    void updateEmployee_DuplicateEmail_ThrowsException() {
+        when(employeeRepository.findById("db-id-001")).thenReturn(Optional.of(sampleEmployee));
+        when(employeeRepository.existsByEmployeeIdAndIdNot(anyString(), anyString())).thenReturn(false);
+        when(employeeRepository.existsByEmailAndIdNot(eq("alice.j@kloudspot.com"), eq("db-id-001"))).thenReturn(true);
+
+        DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
+                () -> employeeService.updateEmployee("db-id-001", sampleRequestDTO));
+
+        assertTrue(exception.getMessage().contains("already assigned"));
+        verify(employeeRepository, never()).save(any(Employee.class));
+    }
+
+    @Test
+    @DisplayName("Should apply search query and department/status filter in query criteria")
+    void getAllEmployees_WithSearchAndFilter() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(mongoTemplate.count(any(Query.class), eq(Employee.class))).thenReturn(1L);
+        when(mongoTemplate.find(any(Query.class), eq(Employee.class))).thenReturn(List.of(sampleEmployee));
+
+        PaginatedResponse<EmployeeResponseDTO> response =
+                employeeService.getAllEmployees("Alice", "Engineering", EmploymentStatus.Active, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        verify(mongoTemplate, times(1)).count(any(Query.class), eq(Employee.class));
+        verify(mongoTemplate, times(1)).find(any(Query.class), eq(Employee.class));
+    }
+
+    @Test
+    @DisplayName("Should retrieve all matching employees for CSV export")
+    void getAllEmployeesForExport_Success() {
+        when(mongoTemplate.find(any(Query.class), eq(Employee.class))).thenReturn(List.of(sampleEmployee));
+
+        List<EmployeeResponseDTO> result = employeeService.getAllEmployeesForExport("Alice", "Engineering", EmploymentStatus.Active);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("EMP-101", result.get(0).getEmployeeId());
+    }
+
+    @Test
+    @DisplayName("Should calculate employee KPI statistics accurately")
+    void getEmployeeStats_Success() {
+        when(employeeRepository.count()).thenReturn(12L);
+        when(mongoTemplate.count(any(Query.class), eq(Employee.class))).thenReturn(10L);
+
+        Map<String, Long> stats = employeeService.getEmployeeStats();
+
+        assertNotNull(stats);
+        assertEquals(12L, stats.get("total"));
+        assertEquals(10L, stats.get("active"));
+        assertEquals(2L, stats.get("inactive"));
     }
 }

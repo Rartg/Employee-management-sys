@@ -1,6 +1,60 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/employees';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/employees';
+const AUTH_BASE_URL = '/api/auth';
 
 export const employeeService = {
+  getAuthHeaders() {
+    const token = localStorage.getItem('kloudspot_auth_header');
+    if (token) {
+      return { 'Authorization': token };
+    }
+    return {};
+  },
+
+  async login(username, password) {
+    const response = await fetch(`${AUTH_BASE_URL}/login`, {
+      method: 'POST',
+      credentials: 'include', // Spring Security HTTP Session cookie (JSESSIONID)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Authentication failed. Please check credentials.');
+    }
+    const userData = result.data;
+    localStorage.setItem('kloudspot_auth_header', userData.basicAuthHeader);
+    localStorage.setItem('kloudspot_auth_user', JSON.stringify(userData));
+    return userData;
+  },
+
+  async logout() {
+    try {
+      await fetch(`${AUTH_BASE_URL}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: this.getAuthHeaders()
+      });
+    } catch (e) {
+      // Ignore network errors during logout
+    } finally {
+      localStorage.removeItem('kloudspot_auth_header');
+      localStorage.removeItem('kloudspot_auth_user');
+    }
+  },
+
+  getCurrentUser() {
+    const raw = localStorage.getItem('kloudspot_auth_user');
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    }
+    // Return null if not logged in - landing page will prompt for login
+    return null;
+  },
+
   async getEmployees({ search = '', department = '', status = '', page = 0, size = 10, sortBy = 'createdAt', direction = 'desc' }) {
     const params = new URLSearchParams();
     if (search.trim()) params.append('search', search.trim());
@@ -11,7 +65,10 @@ export const employeeService = {
     params.append('sortBy', sortBy);
     params.append('direction', direction);
 
-    const response = await fetch(`${API_BASE_URL}?${params.toString()}`);
+    const response = await fetch(`${API_BASE_URL}?${params.toString()}`, {
+      credentials: 'include',
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.message || 'Failed to fetch employees');
@@ -21,7 +78,10 @@ export const employeeService = {
   },
 
   async getEmployeeById(id) {
-    const response = await fetch(`${API_BASE_URL}/${id}`);
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      credentials: 'include',
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.message || 'Failed to fetch employee details');
@@ -31,9 +91,14 @@ export const employeeService = {
   },
 
   async createEmployee(employeeData) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.getAuthHeaders()
+    };
     const response = await fetch(API_BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers,
       body: JSON.stringify(employeeData)
     });
     if (!response.ok) {
@@ -49,9 +114,14 @@ export const employeeService = {
   },
 
   async updateEmployee(id, employeeData) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.getAuthHeaders()
+    };
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers,
       body: JSON.stringify(employeeData)
     });
     if (!response.ok) {
@@ -68,7 +138,9 @@ export const employeeService = {
 
   async deleteEmployee(id) {
     const response = await fetch(`${API_BASE_URL}/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include',
+      headers: this.getAuthHeaders()
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -78,17 +150,40 @@ export const employeeService = {
   },
 
   async getDepartments() {
-    const response = await fetch(`${API_BASE_URL}/departments`);
+    const response = await fetch(`${API_BASE_URL}/departments`, {
+      credentials: 'include',
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) return [];
     const result = await response.json();
     return result.data || [];
   },
 
   async getStats() {
-    const response = await fetch(`${API_BASE_URL}/stats`);
+    const response = await fetch(`${API_BASE_URL}/stats`, {
+      credentials: 'include',
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) return { total: 0, active: 0, inactive: 0 };
     const result = await response.json();
     return result.data || { total: 0, active: 0, inactive: 0 };
+  },
+
+  async importCsv(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/import/csv`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: this.getAuthHeaders(),
+      body: formData
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'CSV Import failed');
+    }
+    return result.data;
   },
 
   getExportCsvUrl(search = '', department = '', status = '') {

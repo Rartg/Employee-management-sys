@@ -7,20 +7,30 @@ import Pagination from './components/Pagination';
 import EmployeeFormModal from './components/EmployeeFormModal';
 import EmployeeDetailsModal from './components/EmployeeDetailsModal';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
+import CsvImportModal from './components/CsvImportModal';
+import LoginPage from './components/LoginPage';
 import Toast from './components/Toast';
 import { employeeService } from './api/employeeService';
+import './App.css';
 
 export default function App() {
+  // Authentication State - Null if not logged in
+  const [currentUser, setCurrentUser] = useState(() => employeeService.getCurrentUser());
+
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // CSV Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
 
   // Day / Night Theme State
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('kloudspot_theme') || 'dark';
+    return urlParams.get('theme') || localStorage.getItem('kloudspot_theme') || 'dark';
   });
 
   useEffect(() => {
@@ -44,8 +54,8 @@ export default function App() {
   const [direction, setDirection] = useState('desc');
 
   // Modal States
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(() => urlParams.get('modal') === 'add');
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(() => urlParams.get('modal') === 'details');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
@@ -58,6 +68,7 @@ export default function App() {
 
   // Fetch Employees Data
   const loadEmployees = useCallback(async () => {
+    if (!currentUser) return;
     setIsLoading(true);
     try {
       const data = await employeeService.getEmployees({
@@ -69,21 +80,24 @@ export default function App() {
         sortBy,
         direction
       });
-      setEmployees(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
-      setIsConnected(true);
+      setEmployees(data?.content || []);
+      setTotalPages(data?.totalPages || 0);
+      setTotalElements(data?.totalElements || 0);
     } catch (err) {
       console.error(err);
-      setIsConnected(false);
-      showToast(err.message || 'Error connecting to Kloudspot API', 'error');
+      if (err.message && err.message.includes('401')) {
+        handleLogout();
+      } else {
+        showToast(err.message || 'Error loading employee directory', 'error');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [search, department, status, pageNumber, pageSize, sortBy, direction]);
+  }, [currentUser, search, department, status, pageNumber, pageSize, sortBy, direction]);
 
   // Fetch Stats & Departments
   const loadMetadata = async () => {
+    if (!currentUser) return;
     try {
       const [deptList, statsData] = await Promise.all([
         employeeService.getDepartments(),
@@ -97,12 +111,16 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadEmployees();
-  }, [loadEmployees]);
+    if (currentUser) {
+      loadEmployees();
+    }
+  }, [currentUser, loadEmployees]);
 
   useEffect(() => {
-    loadMetadata();
-  }, []);
+    if (currentUser) {
+      loadMetadata();
+    }
+  }, [currentUser]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -154,7 +172,7 @@ export default function App() {
       showToast(`Record for ${formData.fullName} updated successfully!`);
     } else {
       await employeeService.createEmployee(formData);
-      showToast(`Employee ${formData.fullName} onboarded successfully!`);
+      showToast(`Employee ${formData.fullName} onboarded with designated login credentials!`);
     }
     loadEmployees();
     loadMetadata();
@@ -177,16 +195,47 @@ export default function App() {
     showToast('Exporting employee directory to CSV...');
   };
 
+  const handleImportSuccess = (result) => {
+    showToast(`CSV Import Complete: ${result.importedCount} added, ${result.updatedCount} updated!`, 'success');
+    loadEmployees();
+    loadMetadata();
+  };
+
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    showToast(`Authenticated as ${user.fullName} (${user.role === 'ROLE_ADMIN' ? 'HR Administrator' : 'Employee'})`);
+  };
+
+  const handleLogout = async () => {
+    await employeeService.logout();
+    setCurrentUser(null);
+    setEmployees([]);
+    showToast('Logged out of directory session.');
+  };
+
+  // IF NOT LOGGED IN, USER LANDS DIRECTLY ON LOGIN PAGE
+  if (!currentUser) {
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+      />
+    );
+  }
+
   return (
     <div className="corporate-app">
       <Navbar
         onAddClick={handleAddEmployee}
         onExportClick={handleExportCsv}
-        isConnected={isConnected}
+        onImportClick={() => setIsImportModalOpen(true)}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
       />
 
       <main className="corporate-main">
@@ -252,6 +301,13 @@ export default function App() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         employee={selectedEmployee}
+      />
+
+      {/* Bulk CSV Import Modal */}
+      <CsvImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={handleImportSuccess}
       />
 
       <Toast toast={toast} onClose={() => setToast(null)} />

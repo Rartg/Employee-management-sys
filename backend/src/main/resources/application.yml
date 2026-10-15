@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -27,4 +27,4 @@ logging:
 mongock:
   migration-scan-package:
     - com.kloudspot.ems.migration
-  transaction-enabled: false
+  transactional: false

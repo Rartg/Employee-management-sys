@@ -6,6 +6,7 @@ import com.kloudspot.ems.repository.EmployeeRepository;
 import io.mongock.api.annotations.ChangeUnit;
 import io.mongock.api.annotations.Execution;
 import io.mongock.api.annotations.RollbackExecution;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
@@ -36,6 +37,20 @@ public class V002__SeedInitialEmployees {
         }
 
         List<Employee> seedList = Arrays.asList(
+                Employee.builder()
+                        .employeeId("EMP-1000")
+                        .fullName("Samarth")
+                        .email("samarth@kloudspot.com")
+                        .phoneNumber("+91 9876543200")
+                        .department("Human Resources")
+                        .designation("Lead HR Administrator")
+                        .dateOfJoining(LocalDate.of(2020, 1, 10))
+                        .salary(1200000.0)
+                        .employmentStatus(EmploymentStatus.Active)
+                        .role("ROLE_ADMIN")
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build(),
                 Employee.builder()
                         .employeeId("EMP-1001")
                         .fullName("Aarav Sharma")
@@ -194,13 +209,34 @@ public class V002__SeedInitialEmployees {
                         .build()
         );
 
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String defaultEmpPassword = encoder.encode("testing@123");
+        String defaultAdminPassword = encoder.encode("samarthgunjal");
+        for (Employee emp : seedList) {
+            if ("EMP-1000".equalsIgnoreCase(emp.getEmployeeId()) || "samarth@kloudspot.com".equalsIgnoreCase(emp.getEmail())) {
+                emp.setPassword(defaultAdminPassword);
+                emp.setRole("ROLE_ADMIN");
+            } else {
+                emp.setPassword(defaultEmpPassword);
+                if (emp.getRole() == null || emp.getRole().isBlank()) {
+                    emp.setRole("ROLE_EMPLOYEE");
+                }
+            }
+        }
+
         employeeRepository.saveAll(seedList);
-        log.info("[MONGOCK MIGRATION 002] Successfully seeded 12 employees via Mongock.");
+        log.info("[MONGOCK MIGRATION 002] Successfully seeded 12 employees with default passwords via Mongock.");
     }
 
     @RollbackExecution
     public void rollback() {
-        log.info("[MONGOCK ROLLBACK 002] Rolling back seeded employee data...");
-        employeeRepository.deleteAll();
+        log.info("[MONGOCK ROLLBACK 002] Rolling back seeded employee data (preserving administrator-created records)...");
+        List<String> seedEmpIds = List.of(
+                "EMP-1000", "EMP-1001", "EMP-1002", "EMP-1003", "EMP-1004", "EMP-1005", "EMP-1006",
+                "EMP-1007", "EMP-1008", "EMP-1009", "EMP-1010", "EMP-1011", "EMP-1012"
+        );
+        for (String empId : seedEmpIds) {
+            employeeRepository.deleteByEmployeeId(empId);
+        }
     }
 }

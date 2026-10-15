@@ -16,8 +16,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.kloudspot.ems.dto.CsvImportResultDTO;
+import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDate;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -30,28 +38,38 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final MongoTemplate mongoTemplate;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public EmployeeResponseDTO createEmployee(EmployeeRequestDTO requestDTO) {
-        log.info("Creating new employee with employeeId: {}, email: {}", requestDTO.getEmployeeId(), requestDTO.getEmail());
+        String trimmedEmpId = requestDTO.getEmployeeId() != null ? requestDTO.getEmployeeId().trim().toUpperCase() : "";
+        String trimmedEmail = requestDTO.getEmail() != null ? requestDTO.getEmail().trim().toLowerCase() : "";
 
-        if (employeeRepository.existsByEmployeeId(requestDTO.getEmployeeId())) {
-            throw new DuplicateResourceException("Employee with ID '" + requestDTO.getEmployeeId() + "' already exists");
+        log.info("Creating new employee with employeeId: {}, email: {}", trimmedEmpId, trimmedEmail);
+
+        if (employeeRepository.existsByEmployeeId(trimmedEmpId)) {
+            throw new DuplicateResourceException("Employee with ID '" + trimmedEmpId + "' already exists");
         }
-        if (employeeRepository.existsByEmail(requestDTO.getEmail())) {
-            throw new DuplicateResourceException("Employee with email '" + requestDTO.getEmail() + "' already exists");
+        if (employeeRepository.existsByEmail(trimmedEmail)) {
+            throw new DuplicateResourceException("Employee with email '" + trimmedEmail + "' already exists");
         }
 
         Employee employee = Employee.builder()
-                .employeeId(requestDTO.getEmployeeId().trim().toUpperCase())
-                .fullName(requestDTO.getFullName().trim())
-                .email(requestDTO.getEmail().trim().toLowerCase())
-                .phoneNumber(requestDTO.getPhoneNumber().trim())
-                .department(requestDTO.getDepartment().trim())
-                .designation(requestDTO.getDesignation().trim())
+                .employeeId(trimmedEmpId)
+                .fullName(requestDTO.getFullName() != null ? requestDTO.getFullName().trim() : "")
+                .email(trimmedEmail)
+                .phoneNumber(requestDTO.getPhoneNumber() != null ? requestDTO.getPhoneNumber().trim() : "")
+                .department(requestDTO.getDepartment() != null ? requestDTO.getDepartment().trim() : "")
+                .designation(requestDTO.getDesignation() != null ? requestDTO.getDesignation().trim() : "")
                 .dateOfJoining(requestDTO.getDateOfJoining())
                 .salary(requestDTO.getSalary())
                 .employmentStatus(requestDTO.getEmploymentStatus())
+                .role("ROLE_EMPLOYEE")
+                .password(passwordEncoder.encode(
+                        requestDTO.getPassword() != null && !requestDTO.getPassword().isBlank()
+                                ? requestDTO.getPassword().trim()
+                                : "testing@123"
+                ))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -198,4 +216,205 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         return query;
     }
+
+    @Override
+    public CsvImportResultDTO importEmployeesFromCsv(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("CSV file cannot be empty");
+        }
+
+        int total = 0;
+        int imported = 0;
+        int updated = 0;
+        int skipped = 0;
+        List<String> errors = new java.util.ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+            String line;
+            boolean isFirstLine = true;
+
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                // Strip UTF-8 BOM if present on the very first line
+                if (isFirstLine && line.startsWith("\uFEFF")) {
+                    line = line.substring(1);
+                }
+
+                // Check and skip header row
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    String lower = line.toLowerCase();
+                    if (lower.contains("employee id") || lower.contains("email") || lower.contains("name")) {
+                        continue;
+                    }
+                }
+
+                total++;
+                List<String> tokens = parseCsvLine(line);
+
+                if (tokens.size() < 3) {
+                    skipped++;
+                    errors.add("Row " + total + ": Insufficient columns (minimum Employee ID, Full Name, Email required)");
+                    continue;
+                }
+
+                String empId = cleanField(tokens.get(0));
+                String fullName = cleanField(tokens.get(1));
+                String email = cleanField(tokens.get(2));
+
+                if (empId.isEmpty() || fullName.isEmpty() || email.isEmpty()) {
+                    skipped++;
+                    errors.add("Row " + total + ": Missing mandatory field (Employee ID, Name, or Email)");
+                    continue;
+                }
+
+                String phone = tokens.size() > 3 ? cleanField(tokens.get(3)) : "+91 9999999999";
+                String dept = tokens.size() > 4 ? cleanField(tokens.get(4)) : "Engineering";
+                String designation = tokens.size() > 5 ? cleanField(tokens.get(5)) : "Software Engineer";
+                
+                LocalDate doj = LocalDate.now();
+                if (tokens.size() > 6) {
+                    String dojStr = cleanField(tokens.get(6));
+                    try {
+                        doj = parseFlexibleDate(dojStr);
+                    } catch (Exception e) {
+                        doj = LocalDate.now();
+                    }
+                }
+
+                Double salary = 800000.0;
+                if (tokens.size() > 7) {
+                    String salStr = cleanField(tokens.get(7)).replaceAll("[^0-9.]", "");
+                    try {
+                        if (!salStr.isEmpty()) salary = Double.parseDouble(salStr);
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                EmploymentStatus status = EmploymentStatus.Active;
+                if (tokens.size() > 8) {
+                    String statusStr = cleanField(tokens.get(8));
+                    if ("inactive".equalsIgnoreCase(statusStr)) {
+                        status = EmploymentStatus.Inactive;
+                    }
+                }
+
+                try {
+                    // Check if employee exists by employeeId or email
+                    Optional<Employee> existingOpt = employeeRepository.findByEmployeeId(empId);
+                    if (existingOpt.isEmpty()) {
+                        existingOpt = employeeRepository.findByEmail(email);
+                    }
+
+                    if (existingOpt.isPresent()) {
+                        Employee existing = existingOpt.get();
+                        existing.setFullName(fullName);
+                        existing.setEmail(email);
+                        existing.setPhoneNumber(phone);
+                        existing.setDepartment(dept);
+                        existing.setDesignation(designation);
+                        existing.setDateOfJoining(doj);
+                        existing.setSalary(salary);
+                        existing.setEmploymentStatus(status);
+                        if (existing.getPassword() == null || existing.getPassword().isBlank()) {
+                            existing.setPassword(passwordEncoder.encode("testing@123"));
+                        }
+                        if (existing.getRole() == null || existing.getRole().isBlank()) {
+                            existing.setRole("ROLE_EMPLOYEE");
+                        }
+                        existing.setUpdatedAt(LocalDateTime.now());
+                        employeeRepository.save(existing);
+                        updated++;
+                    } else {
+                        Employee newEmp = Employee.builder()
+                                .employeeId(empId)
+                                .fullName(fullName)
+                                .email(email)
+                                .phoneNumber(phone)
+                                .department(dept)
+                                .designation(designation)
+                                .dateOfJoining(doj)
+                                .salary(salary)
+                                .employmentStatus(status)
+                                .role("ROLE_EMPLOYEE")
+                                .password(passwordEncoder.encode("testing@123"))
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+                        employeeRepository.save(newEmp);
+                        imported++;
+                    }
+                } catch (Exception ex) {
+                    skipped++;
+                    errors.add("Row " + total + " (" + empId + "): " + ex.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to read CSV input stream", e);
+            throw new RuntimeException("Error processing CSV file: " + e.getMessage());
+        }
+
+        log.info("CSV Import summary: total={}, imported={}, updated={}, skipped={}", total, imported, updated, skipped);
+        return CsvImportResultDTO.builder()
+                .totalRows(total)
+                .importedCount(imported)
+                .updatedCount(updated)
+                .skippedCount(skipped)
+                .errors(errors)
+                .build();
+    }
+
+    private List<String> parseCsvLine(String line) {
+        List<String> values = new java.util.ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean inQuotes = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                values.add(sb.toString().trim());
+                sb.setLength(0);
+            } else {
+                sb.append(c);
+            }
+        }
+        values.add(sb.toString().trim());
+        return values;
+    }
+
+    private String cleanField(String val) {
+        if (val == null) return "";
+        String trimmed = val.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length() >= 2) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1).replace("\"\"", "\"").trim();
+        }
+        if (trimmed.startsWith("'")) {
+            trimmed = trimmed.substring(1).trim();
+        }
+        return trimmed;
+    }
+
+    private LocalDate parseFlexibleDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) return LocalDate.now();
+        dateStr = dateStr.trim();
+        List<DateTimeFormatter> formatters = List.of(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+                DateTimeFormatter.ofPattern("M/d/yyyy")
+        );
+        for (DateTimeFormatter fmt : formatters) {
+            try {
+                return LocalDate.parse(dateStr, fmt);
+            } catch (Exception ignored) {}
+        }
+        return LocalDate.now();
+    }
+
 }

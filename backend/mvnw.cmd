@@ -18,6 +18,12 @@
 @REM under the License.
 @REM ----------------------------------------------------------------------------
 
+@IF "%JAVA_HOME%"=="" (
+  @IF EXIST "E:\jdk-17" (
+    @SET "JAVA_HOME=E:\jdk-17"
+    @SET "PATH=E:\jdk-17\bin;%PATH%"
+  )
+)
 @REM ----------------------------------------------------------------------------
 @REM Apache Maven Wrapper startup batch script, version 3.3.4
 @REM

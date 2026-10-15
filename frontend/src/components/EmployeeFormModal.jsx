@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Building2, Briefcase, Calendar, DollarSign, Tag, Check, AlertCircle } from 'lucide-react';
+import { X, User, Mail, Phone, Building2, Briefcase, Calendar, DollarSign, Tag, Check, AlertCircle, Lock } from 'lucide-react';
 import KloudspotLogo from './KloudspotLogo';
 
 export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, departments = [] }) {
@@ -144,7 +144,8 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="corporate-form-body">
+        <form onSubmit={handleSubmit} className="corporate-modal-form-wrapper">
+        <div className="corporate-form-scrollable-body">
           {/* Section 1: Identification */}
           <div className="form-section-header">1. IDENTITY & CREDENTIALS</div>
           <div className="form-row-2">
@@ -172,6 +173,23 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
                 onChange={handleChange}
               />
               {errors.fullName && <span className="input-error-msg">{errors.fullName}</span>}
+            </div>
+          </div>
+
+                    <div className="form-row-2" style={{ marginTop: '10px' }}>
+            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+              <label className="input-label"><Lock size={12} /> Designated Login Password</label>
+              <input
+                type="password"
+                name="password"
+                placeholder={isEditing ? "Leave blank to keep current password" : "Enter password (default: testing@123)"}
+                className="corporate-input"
+                value={formData.password || ''}
+                onChange={handleChange}
+              />
+              <span style={{ fontSize: '11px', color: '#71717a', marginTop: '3px' }}>
+                {isEditing ? "Leave blank to preserve existing password." : "Designated password that this employee will use to authenticate in the EMS directory."}
+              </span>
             </div>
           </div>
 
@@ -311,16 +329,18 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="corporate-modal-actions">
-            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary-corporate" disabled={isSubmitting}>
-              {isSubmitting ? 'Validating...' : isEditing ? 'Save Changes' : 'Confirm & Register'}
-            </button>
-          </div>
-        </form>
+        </div>
+
+        {/* Pinned Modal Footer Actions */}
+        <div className="corporate-modal-footer-actions">
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-primary-corporate" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Employee'}
+          </button>
+        </div>
+      </form>
       </div>
     </div>
   );

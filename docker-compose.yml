@@ -12,6 +12,12 @@ services:
     volumes:
       - mongo-data:/data/db
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - ems-network
 
@@ -28,7 +34,8 @@ services:
       - MONGO_PORT=27017
       - MONGO_DB=employee_db
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - ems-network
 

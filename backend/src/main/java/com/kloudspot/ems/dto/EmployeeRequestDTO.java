@@ -58,4 +58,7 @@ public class EmployeeRequestDTO {
     @NotNull(message = "Employment Status is required (Active or Inactive)")
     @Schema(example = "Active", description = "Current employment status (Active or Inactive)")
     private EmploymentStatus employmentStatus;
+
+    @Schema(example = "testing@123", description = "Designated login password for employee authentication (default: testing@123)")
+    private String password;
 }
