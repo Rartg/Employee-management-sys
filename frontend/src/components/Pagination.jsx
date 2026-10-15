@@ -14,7 +14,6 @@ export default function Pagination({
   const start = pageNumber * pageSize + 1;
   const end = Math.min((pageNumber + 1) * pageSize, totalElements);
 
-  // Generate pagination page numbers
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -32,18 +31,18 @@ export default function Pagination({
   };
 
   return (
-    <div className="pagination-bar">
-      <div className="pagination-info">
+    <div className="corporate-pagination-bar">
+      <div className="pagination-text-info">
         Showing <strong>{start}</strong> to <strong>{end}</strong> of <strong>{totalElements}</strong> employees
       </div>
 
-      <div className="pagination-controls">
-        <div className="page-size-selector">
-          <span>Rows per page:</span>
+      <div className="pagination-action-controls">
+        <div className="page-size-picker">
+          <span className="picker-label">Rows per page:</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="page-select"
+            className="corporate-select-compact"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -52,32 +51,36 @@ export default function Pagination({
           </select>
         </div>
 
-        <div className="page-buttons">
+        <div className="pagination-button-group">
           <button
-            className="page-nav-btn"
+            className="btn-page-nav"
             disabled={pageNumber === 0}
             onClick={() => onPageChange(pageNumber - 1)}
             title="Previous Page"
           >
             <ChevronLeft size={16} />
+            <span className="nav-text">Prev</span>
           </button>
 
-          {getPageNumbers().map((p) => (
-            <button
-              key={p}
-              className={`page-num-btn ${p === pageNumber ? 'active' : ''}`}
-              onClick={() => onPageChange(p)}
-            >
-              {p + 1}
-            </button>
-          ))}
+          <div className="page-numbers-list">
+            {getPageNumbers().map((p) => (
+              <button
+                key={p}
+                className={`btn-page-number ${p === pageNumber ? 'page-active' : ''}`}
+                onClick={() => onPageChange(p)}
+              >
+                {p + 1}
+              </button>
+            ))}
+          </div>
 
           <button
-            className="page-nav-btn"
+            className="btn-page-nav"
             disabled={pageNumber >= totalPages - 1}
             onClick={() => onPageChange(pageNumber + 1)}
             title="Next Page"
           >
+            <span className="nav-text">Next</span>
             <ChevronRight size={16} />
           </button>
         </div>

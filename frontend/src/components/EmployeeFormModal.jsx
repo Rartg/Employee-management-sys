@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Building2, Briefcase, Calendar, DollarSign, Tag } from 'lucide-react';
+import { X, User, Mail, Phone, Building2, Briefcase, Calendar, DollarSign, Tag, Check, AlertCircle } from 'lucide-react';
+import KloudspotLogo from './KloudspotLogo';
 
 export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, departments = [] }) {
   const isEditing = Boolean(employee);
@@ -47,7 +48,7 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
     if (!formData.employeeId.trim()) {
       newErrors.employeeId = 'Employee ID is required';
     } else if (!/^[A-Za-z0-9_-]{2,20}$/.test(formData.employeeId.trim())) {
-      newErrors.employeeId = 'Must be 2-20 alphanumeric characters';
+      newErrors.employeeId = 'Must be 2-20 alphanumeric characters (e.g. EMP-101)';
     }
 
     if (!formData.fullName.trim()) {
@@ -57,33 +58,33 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email Address is required';
+      newErrors.email = 'Corporate Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'Enter a valid email address';
+      newErrors.email = 'Please provide a valid email format';
     }
 
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone Number is required';
     } else if (!/^[+]?[0-9\s-]{8,20}$/.test(formData.phoneNumber.trim())) {
-      newErrors.phoneNumber = 'Enter a valid phone number (8-20 digits)';
+      newErrors.phoneNumber = 'Enter a valid contact number (8-20 digits)';
     }
 
     if (!formData.department.trim()) {
-      newErrors.department = 'Department is required';
+      newErrors.department = 'Department selection is required';
     }
 
     if (!formData.designation.trim()) {
-      newErrors.designation = 'Designation is required';
+      newErrors.designation = 'Designation/Title is required';
     }
 
     if (!formData.dateOfJoining) {
-      newErrors.dateOfJoining = 'Date of Joining is required';
+      newErrors.dateOfJoining = 'Joining Date is required';
     }
 
     if (formData.salary === '' || formData.salary === null) {
-      newErrors.salary = 'Salary is required';
+      newErrors.salary = 'Compensation amount is required';
     } else if (Number(formData.salary) < 0) {
-      newErrors.salary = 'Salary cannot be negative';
+      newErrors.salary = 'Compensation cannot be a negative amount';
     }
 
     setErrors(newErrors);
@@ -118,120 +119,108 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title-wrap">
-            <div className="modal-title-icon">
-              <User size={20} />
-            </div>
+    <div className="corporate-modal-backdrop" onClick={onClose}>
+      <div className="corporate-modal-container form-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="corporate-modal-header">
+          <div className="modal-title-group">
+            <KloudspotLogo size={26} showText={false} />
             <div>
-              <h3>{isEditing ? 'Edit Employee Record' : 'Add New Employee'}</h3>
-              <p className="modal-subtitle">
-                {isEditing ? `Updating details for ${employee?.employeeId}` : 'Fill in the information below to register an employee'}
+              <h3>{isEditing ? 'Modify Employee Profile' : 'Onboard New Employee'}</h3>
+              <p className="corporate-modal-subtitle">
+                {isEditing ? `Updating verified record for ${employee?.employeeId}` : 'Enter the complete corporate credentials and employment parameters'}
               </p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
-            <X size={20} />
+          <button className="corporate-modal-close" onClick={onClose}>
+            <X size={18} />
           </button>
         </div>
 
         {errors.api && (
-          <div className="alert-banner alert-error">
+          <div className="corporate-alert-banner">
+            <AlertCircle size={16} />
             <span>{errors.api}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-grid">
-            {/* Employee ID */}
-            <div className="form-group">
-              <label className="form-label">
-                <Tag size={14} />
-                <span>Employee ID *</span>
-              </label>
+        <form onSubmit={handleSubmit} className="corporate-form-body">
+          {/* Section 1: Identification */}
+          <div className="form-section-header">1. IDENTITY & CREDENTIALS</div>
+          <div className="form-row-2">
+            <div className="input-group">
+              <label className="input-label"><Tag size={12} /> Employee ID *</label>
               <input
                 type="text"
                 name="employeeId"
-                placeholder="e.g. EMP-101"
-                className={`form-control ${errors.employeeId ? 'is-invalid' : ''}`}
+                placeholder="e.g. EMP-105"
+                className={`corporate-input ${errors.employeeId ? 'has-error' : ''}`}
                 value={formData.employeeId}
                 onChange={handleChange}
               />
-              {errors.employeeId && <span className="field-error">{errors.employeeId}</span>}
+              {errors.employeeId && <span className="input-error-msg">{errors.employeeId}</span>}
             </div>
 
-            {/* Full Name */}
-            <div className="form-group">
-              <label className="form-label">
-                <User size={14} />
-                <span>Full Name *</span>
-              </label>
+            <div className="input-group">
+              <label className="input-label"><User size={12} /> Full Legal Name *</label>
               <input
                 type="text"
                 name="fullName"
-                placeholder="e.g. John Doe"
-                className={`form-control ${errors.fullName ? 'is-invalid' : ''}`}
+                placeholder="e.g. Priya Sharma"
+                className={`corporate-input ${errors.fullName ? 'has-error' : ''}`}
                 value={formData.fullName}
                 onChange={handleChange}
               />
-              {errors.fullName && <span className="field-error">{errors.fullName}</span>}
+              {errors.fullName && <span className="input-error-msg">{errors.fullName}</span>}
             </div>
+          </div>
 
-            {/* Email Address */}
-            <div className="form-group">
-              <label className="form-label">
-                <Mail size={14} />
-                <span>Email Address *</span>
-              </label>
+          {/* Section 2: Contact */}
+          <div className="form-section-header">2. COMMUNICATION CHANNELS</div>
+          <div className="form-row-2">
+            <div className="input-group">
+              <label className="input-label"><Mail size={12} /> Corporate Email *</label>
               <input
                 type="email"
                 name="email"
-                placeholder="e.g. john.doe@kloudspot.com"
-                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                placeholder="e.g. priya.s@kloudspot.com"
+                className={`corporate-input ${errors.email ? 'has-error' : ''}`}
                 value={formData.email}
                 onChange={handleChange}
               />
-              {errors.email && <span className="field-error">{errors.email}</span>}
+              {errors.email && <span className="input-error-msg">{errors.email}</span>}
             </div>
 
-            {/* Phone Number */}
-            <div className="form-group">
-              <label className="form-label">
-                <Phone size={14} />
-                <span>Phone Number *</span>
-              </label>
+            <div className="input-group">
+              <label className="input-label"><Phone size={12} /> Direct Contact Number *</label>
               <input
                 type="text"
                 name="phoneNumber"
                 placeholder="e.g. +91 9876543210"
-                className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
+                className={`corporate-input ${errors.phoneNumber ? 'has-error' : ''}`}
                 value={formData.phoneNumber}
                 onChange={handleChange}
               />
-              {errors.phoneNumber && <span className="field-error">{errors.phoneNumber}</span>}
+              {errors.phoneNumber && <span className="input-error-msg">{errors.phoneNumber}</span>}
             </div>
+          </div>
 
-            {/* Department */}
-            <div className="form-group">
-              <label className="form-label">
-                <Building2 size={14} />
-                <span>Department *</span>
-              </label>
+          {/* Section 3: Job Placement */}
+          <div className="form-section-header">3. ORGANIZATIONAL ASSIGNMENT</div>
+          <div className="form-row-2">
+            <div className="input-group">
+              <label className="input-label"><Building2 size={12} /> Department *</label>
               <input
                 type="text"
                 name="department"
-                list="department-suggestions"
-                placeholder="e.g. Engineering"
-                className={`form-control ${errors.department ? 'is-invalid' : ''}`}
+                list="corporate-depts"
+                placeholder="Select or type department"
+                className={`corporate-input ${errors.department ? 'has-error' : ''}`}
                 value={formData.department}
                 onChange={handleChange}
               />
-              <datalist id="department-suggestions">
-                {departments.map((dept) => (
-                  <option key={dept} value={dept} />
-                ))}
+              <datalist id="corporate-depts">
+                {departments.map(d => <option key={d} value={d} />)}
                 <option value="Engineering" />
                 <option value="Human Resources" />
                 <option value="Marketing" />
@@ -239,106 +228,96 @@ export default function EmployeeFormModal({ isOpen, onClose, onSave, employee, d
                 <option value="Sales" />
                 <option value="Operations" />
               </datalist>
-              {errors.department && <span className="field-error">{errors.department}</span>}
+              {errors.department && <span className="input-error-msg">{errors.department}</span>}
             </div>
 
-            {/* Designation */}
-            <div className="form-group">
-              <label className="form-label">
-                <Briefcase size={14} />
-                <span>Designation *</span>
-              </label>
+            <div className="input-group">
+              <label className="input-label"><Briefcase size={12} /> Designation / Role *</label>
               <input
                 type="text"
                 name="designation"
-                placeholder="e.g. Backend Software Engineer"
-                className={`form-control ${errors.designation ? 'is-invalid' : ''}`}
+                placeholder="e.g. Principal Cloud Engineer"
+                className={`corporate-input ${errors.designation ? 'has-error' : ''}`}
                 value={formData.designation}
                 onChange={handleChange}
               />
-              {errors.designation && <span className="field-error">{errors.designation}</span>}
-            </div>
-
-            {/* Date of Joining */}
-            <div className="form-group">
-              <label className="form-label">
-                <Calendar size={14} />
-                <span>Date of Joining *</span>
-              </label>
-              <input
-                type="date"
-                name="dateOfJoining"
-                className={`form-control ${errors.dateOfJoining ? 'is-invalid' : ''}`}
-                value={formData.dateOfJoining}
-                onChange={handleChange}
-              />
-              {errors.dateOfJoining && <span className="field-error">{errors.dateOfJoining}</span>}
-            </div>
-
-            {/* Salary */}
-            <div className="form-group">
-              <label className="form-label">
-                <DollarSign size={14} />
-                <span>Annual Salary (₹) *</span>
-              </label>
-              <input
-                type="number"
-                name="salary"
-                placeholder="e.g. 850000"
-                min="0"
-                step="1000"
-                className={`form-control ${errors.salary ? 'is-invalid' : ''}`}
-                value={formData.salary}
-                onChange={handleChange}
-              />
-              {errors.salary && <span className="field-error">{errors.salary}</span>}
-            </div>
-
-            {/* Employment Status */}
-            <div className="form-group form-group-full">
-              <label className="form-label">
-                <span>Employment Status *</span>
-              </label>
-              <div className="status-toggle-group">
-                <label className={`status-radio-card ${formData.employmentStatus === 'Active' ? 'active' : ''}`}>
-                  <input
-                    type="radio"
-                    name="employmentStatus"
-                    value="Active"
-                    checked={formData.employmentStatus === 'Active'}
-                    onChange={handleChange}
-                  />
-                  <span className="radio-dot active-dot"></span>
-                  <div>
-                    <div className="radio-label">Active</div>
-                    <div className="radio-sub">Current working employee</div>
-                  </div>
-                </label>
-
-                <label className={`status-radio-card ${formData.employmentStatus === 'Inactive' ? 'inactive' : ''}`}>
-                  <input
-                    type="radio"
-                    name="employmentStatus"
-                    value="Inactive"
-                    checked={formData.employmentStatus === 'Inactive'}
-                    onChange={handleChange}
-                  />
-                  <span className="radio-dot inactive-dot"></span>
-                  <div>
-                    <div className="radio-label">Inactive</div>
-                    <div className="radio-sub">Resigned, on leave, or offboarded</div>
-                  </div>
-                </label>
-              </div>
+              {errors.designation && <span className="input-error-msg">{errors.designation}</span>}
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
+          {/* Section 4: Compensation & Status */}
+          <div className="form-section-header">4. TENURE & STATUS</div>
+          <div className="form-row-2">
+            <div className="input-group">
+              <label className="input-label"><Calendar size={12} /> Date of Joining *</label>
+              <input
+                type="date"
+                name="dateOfJoining"
+                className={`corporate-input ${errors.dateOfJoining ? 'has-error' : ''}`}
+                value={formData.dateOfJoining}
+                onChange={handleChange}
+              />
+              {errors.dateOfJoining && <span className="input-error-msg">{errors.dateOfJoining}</span>}
+            </div>
+
+            <div className="input-group">
+              <label className="input-label"><DollarSign size={12} /> Annual Compensation (₹ CTC) *</label>
+              <input
+                type="number"
+                name="salary"
+                placeholder="e.g. 1200000"
+                min="0"
+                step="1000"
+                className={`corporate-input ${errors.salary ? 'has-error' : ''}`}
+                value={formData.salary}
+                onChange={handleChange}
+              />
+              {errors.salary && <span className="input-error-msg">{errors.salary}</span>}
+            </div>
+          </div>
+
+          <div className="input-group status-selection-group">
+            <label className="input-label">Employment Standing *</label>
+            <div className="corporate-radio-row">
+              <label className={`corporate-radio-option ${formData.employmentStatus === 'Active' ? 'option-selected-active' : ''}`}>
+                <input
+                  type="radio"
+                  name="employmentStatus"
+                  value="Active"
+                  checked={formData.employmentStatus === 'Active'}
+                  onChange={handleChange}
+                />
+                <span className="radio-circle"></span>
+                <div>
+                  <div className="option-title">Active Workforce</div>
+                  <div className="option-desc">Currently employed and engaged in company operations</div>
+                </div>
+              </label>
+
+              <label className={`corporate-radio-option ${formData.employmentStatus === 'Inactive' ? 'option-selected-inactive' : ''}`}>
+                <input
+                  type="radio"
+                  name="employmentStatus"
+                  value="Inactive"
+                  checked={formData.employmentStatus === 'Inactive'}
+                  onChange={handleChange}
+                />
+                <span className="radio-circle"></span>
+                <div>
+                  <div className="option-title">Inactive / Sabbatical</div>
+                  <div className="option-desc">Offboarded, resigned, or on extended leave</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="corporate-modal-actions">
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : isEditing ? 'Update Employee' : 'Create Employee'}
+            <button type="submit" className="btn btn-primary-corporate" disabled={isSubmitting}>
+              {isSubmitting ? 'Validating...' : isEditing ? 'Save Changes' : 'Confirm & Register'}
             </button>
           </div>
         </form>

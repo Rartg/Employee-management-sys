@@ -16,6 +16,21 @@ export default function App() {
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Day / Night Theme State
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('kloudspot_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('kloudspot_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   // Filter & Pagination States
   const [search, setSearch] = useState('');
@@ -34,7 +49,7 @@ export default function App() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // Toast Notification
+  // Toast
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -61,7 +76,7 @@ export default function App() {
     } catch (err) {
       console.error(err);
       setIsConnected(false);
-      showToast(err.message || 'Error connecting to backend API', 'error');
+      showToast(err.message || 'Error connecting to Kloudspot API', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +103,13 @@ export default function App() {
   useEffect(() => {
     loadMetadata();
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([loadEmployees(), loadMetadata()]);
+    setIsRefreshing(false);
+    showToast('Directory refreshed.');
+  };
 
   // Handlers
   const handleSort = (field) => {
@@ -129,10 +151,10 @@ export default function App() {
   const handleSaveEmployee = async (formData) => {
     if (selectedEmployee) {
       await employeeService.updateEmployee(selectedEmployee.id, formData);
-      showToast(`Employee ${formData.fullName} updated successfully!`);
+      showToast(`Record for ${formData.fullName} updated successfully!`);
     } else {
       await employeeService.createEmployee(formData);
-      showToast(`Employee ${formData.fullName} created successfully!`);
+      showToast(`Employee ${formData.fullName} onboarded successfully!`);
     }
     loadEmployees();
     loadMetadata();
@@ -141,7 +163,7 @@ export default function App() {
   const handleConfirmDelete = async (id) => {
     try {
       await employeeService.deleteEmployee(id);
-      showToast('Employee deleted successfully.');
+      showToast('Employee offboarded successfully.');
       loadEmployees();
       loadMetadata();
     } catch (err) {
@@ -152,21 +174,27 @@ export default function App() {
   const handleExportCsv = () => {
     const url = employeeService.getExportCsvUrl(search, department, status);
     window.open(url, '_blank');
-    showToast('Exporting employee data to CSV...');
+    showToast('Exporting employee directory to CSV...');
   };
 
   return (
-    <div className="app-container">
+    <div className="corporate-app">
       <Navbar
         onAddClick={handleAddEmployee}
         onExportClick={handleExportCsv}
         isConnected={isConnected}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
-      <main className="main-content">
-        <div className="content-container">
+      <main className="corporate-main">
+        <div className="corporate-container">
+          {/* Top KPI Metrics */}
           <StatsCards stats={stats} departmentCount={departments.length} />
 
+          {/* Directory Search & Filter Controls */}
           <EmployeeFilter
             search={search}
             setSearch={(val) => { setSearch(val); setPageNumber(0); }}
@@ -176,8 +204,10 @@ export default function App() {
             setStatus={(val) => { setStatus(val); setPageNumber(0); }}
             departments={departments}
             onReset={handleResetFilters}
+            totalRecords={totalElements}
           />
 
+          {/* Directory Data Table */}
           <EmployeeTable
             employees={employees}
             isLoading={isLoading}
@@ -189,6 +219,7 @@ export default function App() {
             onSort={handleSort}
           />
 
+          {/* Pagination Controls */}
           <Pagination
             pageNumber={pageNumber}
             pageSize={pageSize}

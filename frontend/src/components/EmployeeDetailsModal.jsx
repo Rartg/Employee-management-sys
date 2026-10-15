@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, User, Mail, Phone, Building2, Briefcase, Calendar, DollarSign, Tag, Clock, Edit3 } from 'lucide-react';
+import { X, User, Mail, Phone, Building2, Briefcase, Calendar, DollarSign, Tag, Clock, Edit3, ShieldCheck } from 'lucide-react';
+import KloudspotLogo from './KloudspotLogo';
 
 export default function EmployeeDetailsModal({ isOpen, onClose, employee, onEditClick }) {
   if (!isOpen || !employee) return null;
@@ -22,99 +23,92 @@ export default function EmployeeDetailsModal({ isOpen, onClose, employee, onEdit
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-container detail-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title-wrap">
-            <div className="avatar avatar-lg">
-              {employee.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <h3>{employee.fullName}</h3>
-              <p className="modal-subtitle">{employee.designation} • {employee.department}</p>
-            </div>
+    <div className="corporate-modal-backdrop" onClick={onClose}>
+      <div className="corporate-modal-container dossier-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Dossier Top Banner */}
+        <div className="dossier-banner">
+          <div className="dossier-branding">
+            <KloudspotLogo size={24} showText={false} />
+            <span>KLOUDSPOT EMPLOYEE DOSSIER</span>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
-            <X size={20} />
+          <button className="corporate-modal-close" onClick={onClose}>
+            <X size={18} />
           </button>
         </div>
 
-        <div className="detail-body">
-          <div className="detail-status-bar">
-            <div className="detail-badge-group">
-              <span className="emp-id-badge">{employee.employeeId}</span>
-              <span className={`status-pill status-${employee.employmentStatus.toLowerCase()}`}>
-                <span className="status-pill-dot"></span>
+        {/* Profile Header */}
+        <div className="dossier-header">
+          <div className="dossier-avatar">
+            {employee.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div className="dossier-primary-meta">
+            <div className="dossier-name-row">
+              <h3>{employee.fullName}</h3>
+              <span className={`corporate-status-badge status-${employee.employmentStatus.toLowerCase()}`}>
+                <span className="status-indicator-dot"></span>
                 {employee.employmentStatus}
               </span>
             </div>
-            <button 
-              className="btn btn-secondary btn-sm"
+            <div className="dossier-role-text">{employee.designation} • {employee.department}</div>
+            <div className="dossier-emp-id">
+              <code>ID: {employee.employeeId}</code>
+            </div>
+          </div>
+        </div>
+
+        {/* Dossier Body Grid */}
+        <div className="dossier-content">
+          <div className="dossier-section-title">CONTACT & IDENTIFICATION</div>
+          <div className="dossier-grid">
+            <div className="dossier-field">
+              <span className="field-title"><Mail size={13} /> Corporate Email</span>
+              <a href={`mailto:${employee.email}`} className="field-value link-style">{employee.email}</a>
+            </div>
+            <div className="dossier-field">
+              <span className="field-title"><Phone size={13} /> Phone Number</span>
+              <span className="field-value">{employee.phoneNumber}</span>
+            </div>
+          </div>
+
+          <div className="dossier-section-title">ORGANIZATIONAL PLACEMENT</div>
+          <div className="dossier-grid">
+            <div className="dossier-field">
+              <span className="field-title"><Building2 size={13} /> Department</span>
+              <span className="field-value font-semibold">{employee.department}</span>
+            </div>
+            <div className="dossier-field">
+              <span className="field-title"><Briefcase size={13} /> Functional Role</span>
+              <span className="field-value">{employee.designation}</span>
+            </div>
+          </div>
+
+          <div className="dossier-section-title">COMPENSATION & TENURE</div>
+          <div className="dossier-grid">
+            <div className="dossier-field">
+              <span className="field-title"><Calendar size={13} /> Official Joining Date</span>
+              <span className="field-value">{formatDate(employee.dateOfJoining)}</span>
+            </div>
+            <div className="dossier-field">
+              <span className="field-title"><DollarSign size={13} /> Annual Remuneration</span>
+              <span className="field-value compensation-highlight">{formatSalary(employee.salary)}</span>
+            </div>
+          </div>
+
+          <div className="dossier-footer-metadata">
+            <div className="metadata-item">
+              <Clock size={12} />
+              <span>MongoDB Document Key: <code>{employee.id}</code></span>
+            </div>
+            <button
+              className="btn btn-primary-corporate btn-sm"
               onClick={() => {
                 onClose();
                 onEditClick(employee);
               }}
             >
-              <Edit3 size={15} />
-              <span>Edit Record</span>
+              <Edit3 size={14} />
+              <span>Edit Employee Record</span>
             </button>
-          </div>
-
-          <div className="detail-grid">
-            <div className="detail-item">
-              <div className="detail-icon"><Mail size={16} /></div>
-              <div>
-                <div className="detail-label">Email Address</div>
-                <div className="detail-val">{employee.email}</div>
-              </div>
-            </div>
-
-            <div className="detail-item">
-              <div className="detail-icon"><Phone size={16} /></div>
-              <div>
-                <div className="detail-label">Phone Number</div>
-                <div className="detail-val">{employee.phoneNumber}</div>
-              </div>
-            </div>
-
-            <div className="detail-item">
-              <div className="detail-icon"><Building2 size={16} /></div>
-              <div>
-                <div className="detail-label">Department</div>
-                <div className="detail-val">{employee.department}</div>
-              </div>
-            </div>
-
-            <div className="detail-item">
-              <div className="detail-icon"><Briefcase size={16} /></div>
-              <div>
-                <div className="detail-label">Designation</div>
-                <div className="detail-val">{employee.designation}</div>
-              </div>
-            </div>
-
-            <div className="detail-item">
-              <div className="detail-icon"><Calendar size={16} /></div>
-              <div>
-                <div className="detail-label">Date of Joining</div>
-                <div className="detail-val">{formatDate(employee.dateOfJoining)}</div>
-              </div>
-            </div>
-
-            <div className="detail-item">
-              <div className="detail-icon"><DollarSign size={16} /></div>
-              <div>
-                <div className="detail-label">Annual Salary</div>
-                <div className="detail-val salary-highlight">{formatSalary(employee.salary)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="detail-footer-info">
-            <div className="meta-text">
-              <Clock size={13} />
-              <span>Database Record ID: <code>{employee.id}</code></span>
-            </div>
           </div>
         </div>
       </div>

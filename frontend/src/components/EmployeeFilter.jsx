@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, RotateCcw } from 'lucide-react';
+import { Search, Filter, RotateCcw, X } from 'lucide-react';
 
 export default function EmployeeFilter({
   search,
@@ -9,58 +9,85 @@ export default function EmployeeFilter({
   status,
   setStatus,
   departments = [],
-  onReset
+  onReset,
+  totalRecords = 0
 }) {
-  const hasActiveFilters = search || department || status;
+  const hasActiveFilters = Boolean(search || department || status);
 
   return (
-    <div className="filter-card">
-      <div className="filter-grid">
-        <div className="search-input-wrapper">
-          <Search size={18} className="search-icon" />
+    <div className="enterprise-filter-panel">
+      {/* Search and Dropdowns Bar */}
+      <div className="filter-controls-row">
+        {/* Search Field */}
+        <div className="search-field-wrapper">
+          <Search size={16} className="search-field-icon" />
           <input
             type="text"
-            className="form-control search-control"
-            placeholder="Search by name, email, or employee ID..."
+            className="search-field-input"
+            placeholder="Search by full name, email, or employee ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button className="clear-btn" onClick={() => setSearch('')}>×</button>
+            <button className="search-clear-button" onClick={() => setSearch('')}>
+              <X size={14} />
+            </button>
           )}
         </div>
 
-        <div className="filter-select-wrapper">
+        {/* Department Filter */}
+        <div className="filter-dropdown-wrapper">
           <select
-            className="form-control"
+            className="filter-dropdown-select"
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
           >
-            <option value="">All Departments</option>
+            <option value="">All Departments ({departments.length})</option>
             {departments.map((dept) => (
               <option key={dept} value={dept}>{dept}</option>
             ))}
           </select>
         </div>
 
-        <div className="filter-select-wrapper">
+        {/* Status Filter */}
+        <div className="filter-dropdown-wrapper">
           <select
-            className="form-control"
+            className="filter-dropdown-select"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            <option value="">All Statuses</option>
-            <option value="Active">Active Only</option>
-            <option value="Inactive">Inactive Only</option>
+            <option value="">All Employment Statuses</option>
+            <option value="Active">Active Status</option>
+            <option value="Inactive">Inactive Status</option>
           </select>
         </div>
 
+        {/* Reset Button */}
         {hasActiveFilters && (
-          <button className="btn btn-outline" onClick={onReset} title="Reset all filters">
-            <RotateCcw size={15} />
-            <span>Reset</span>
+          <button className="btn-reset-filters" onClick={onReset} title="Clear all filters">
+            <RotateCcw size={13} />
+            <span>Clear Filters</span>
           </button>
         )}
+      </div>
+
+      {/* Quick Department Filter Pills */}
+      <div className="department-pills-row">
+        <button
+          className={`dept-pill ${!department ? 'dept-pill-active' : ''}`}
+          onClick={() => setDepartment('')}
+        >
+          All Departments
+        </button>
+        {departments.map((dept) => (
+          <button
+            key={dept}
+            className={`dept-pill ${department === dept ? 'dept-pill-active' : ''}`}
+            onClick={() => setDepartment(dept)}
+          >
+            {dept}
+          </button>
+        ))}
       </div>
     </div>
   );
