@@ -1,5 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/employees';
-const AUTH_BASE_URL = '/api/auth';
+const RAW_URL = (import.meta.env.VITE_API_URL || '').trim();
+const BACKEND_URL = RAW_URL.replace(/\/api\/employees\/?$/, '').replace(/\/$/, '');
+
+const API_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api/employees` : '/api/employees';
+const AUTH_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api/auth` : '/api/auth';
 
 export const employeeService = {
   getAuthHeaders() {
