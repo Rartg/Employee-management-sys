@@ -6,9 +6,24 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-8.0-green.svg)](https://www.mongodb.com/)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
 [![OpenAPI](https://img.shields.io/badge/Swagger-OpenAPI%203-yellow.svg)](http://localhost:8080/swagger-ui.html)
-[![Tests](https://img.shields.io/badge/Unit%20Tests-23%20Passed-success.svg)]()
+[![Tests](https://img.shields.io/badge/Unit%20Tests-28%20Passed-success.svg)]()
 
 > Developed for the **Software Engineer / Backend (Freshers)** Technical Assessment at **Kloudspot India Private Limited**.
+
+---
+
+## 🌐 Live Production Deployments & Access
+
+* **🚀 Live Frontend Application:** [https://employee-management-sys-1.onrender.com](https://employee-management-sys-1.onrender.com)
+* **⚙️ Live Backend REST API:** [https://employee-management-sys-0dpe.onrender.com](https://employee-management-sys-0dpe.onrender.com)
+* **📖 Live Swagger / OpenAPI Documentation:** [https://employee-management-sys-0dpe.onrender.com/swagger-ui.html](https://employee-management-sys-0dpe.onrender.com/swagger-ui.html)
+* **📂 GitHub Repository:** [https://github.com/Rartg/Employee-management-sys](https://github.com/Rartg/Employee-management-sys)
+
+### Default Demonstration Credentials:
+| Account Role | Username / Identifier | Password | Access Rights |
+| :--- | :--- | :--- | :--- |
+| **HR Administrator** | `admin` *(or `samarth` / `samarth@kloudspot.com`)* | **`samarthgunjal`** | Full CRUD, CSV Import, CSV Export |
+| **Seeded Employee** | `EMP-1001` *(or any `EMP-1001` to `EMP-1012`)* | **`testing@123`** | Directory Search, View Details, CSV Export |
 
 ---
 
